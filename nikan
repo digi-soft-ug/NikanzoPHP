@@ -1,0 +1,22 @@
+﻿#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use Nikanzo\Core\Console\Command\DbMigrateCommand;
+use Nikanzo\Core\Console\Command\DbSeedCommand;
+use Nikanzo\Core\Console\Command\MakeControllerCommand;
+use Nikanzo\Core\Console\Command\MakeUsecaseCommand;
+use Symfony\Component\Console\Application;
+
+require __DIR__ . '/vendor/autoload.php';
+
+$application = new Application('NikanzoPHP', '0.2.0');
+$basePath = __DIR__;
+
+$application->add(new MakeControllerCommand($basePath));
+$application->add(new MakeUsecaseCommand($basePath));
+$application->add(new DbMigrateCommand($basePath));
+$application->add(new DbSeedCommand($basePath));
+
+$application->run();

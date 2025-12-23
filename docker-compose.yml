@@ -1,0 +1,15 @@
+﻿version: "3.9"
+
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/var/www/html
+      - ./database:/var/www/html/database
+    environment:
+      NIKANZO_DB_DRIVER: sqlite
+      NIKANZO_DB_DATABASE: /var/www/html/database/database.sqlite
+    command: ["php", "-S", "0.0.0.0:8000", "-t", "public", "public/index.php"]
+    working_dir: /var/www/html

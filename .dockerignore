@@ -1,0 +1,10 @@
+﻿# Ignore host vendor to avoid overwriting container install
+vendor/
+node_modules/
+.git
+.gitignore
+.idea
+.vscode
+.env
+*.log
+Dockerfile
