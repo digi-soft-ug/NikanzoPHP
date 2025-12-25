@@ -10,7 +10,6 @@ use Attribute;
 final class Route
 {
     /**
-     * @var string
      */
     private string $path;
     /**

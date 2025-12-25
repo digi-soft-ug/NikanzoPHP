@@ -18,9 +18,11 @@
     "ext-pdo_sqlite": "*"
   },
   "require-dev": {
-    "phpunit/phpunit": "^11.0",
+    "phpunit/phpunit": "^10.0",
     "phpstan/phpstan": "^2.1",
-    "friendsofphp/php-cs-fixer": "^3.92"
+    "friendsofphp/php-cs-fixer": "^3.92",
+    "roave/security-advisories": "dev-latest",
+    "vimeo/psalm": "^5.18"
   },
   "autoload": {
     "psr-4": {
@@ -39,6 +41,8 @@
     "phpstan": "phpstan analyse",
     "phpstan:ci": "phpstan analyse --error-format=github",
     "php-cs-fixer": "php-cs-fixer fix --dry-run --diff",
-    "php-cs-fixer:fix": "php-cs-fixer fix"
+    "php-cs-fixer:fix": "php-cs-fixer fix",
+    "security-check": "composer check-platform-reqs",
+    "psalm": "psalm --show-info=true"
   }
 }

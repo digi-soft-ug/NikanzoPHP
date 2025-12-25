@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Nikanzo\Core\Console\Command;
@@ -50,7 +51,7 @@ final class MakeControllerCommand extends Command
         }
 
         $template = $this->buildTemplate($normalized['namespace'], $normalized['class'], $normalized['route']);
-        
+
         if (file_put_contents($file, $template) === false) {
             $output->writeln('<error>Failed to write file: ' . $file . '</error>');
             return Command::FAILURE;

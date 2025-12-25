@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Nikanzo\Core\Console\Command;
 
 use Nikanzo\Core\FastRouter;
-use Nikanzo\Core\Router;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
