@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nikanzo\Core;
 
+use Nikanzo\Core\Attributes\RequiredScope;
 use Nikanzo\Core\Container\Container;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\Response;
@@ -17,10 +18,10 @@ final class Kernel
 {
     /** @var list<MiddlewareInterface> */
     private array $middleware = [];
-    private Router $router;
+    private RouterInterface $router;
     private Container $container;
 
-    public function __construct(Router $router, Container $container)
+    public function __construct(RouterInterface $router, Container $container)
     {
         $this->router = $router;
         $this->container = $container;
@@ -34,6 +35,60 @@ final class Kernel
     public function handle(Request $request): ResponseInterface
     {
         $psrRequest = $this->convertRequest($request);
+
+        $coreHandler = new class ($this->router, $this->container, fn (string $c, string $m, ServerRequestInterface $r) => $this->checkScopes($c, $m, $r)) implements RequestHandlerInterface {
+            private RouterInterface $router;
+            private Container $container;
+            /** @var callable */
+            private $scopeChecker;
+
+            public function __construct(RouterInterface $router, Container $container, callable $scopeChecker)
+            {
+                $this->router = $router;
+                $this->container = $container;
+                $this->scopeChecker = $scopeChecker;
+            }
+
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                $match = $this->router->match($request);
+                if ($match === null) {
+                    return new Response(
+                        404,
+                        ['Content-Type' => 'application/json'],
+                        json_encode(['error' => 'Not found'], JSON_THROW_ON_ERROR)
+                    );
+                }
+
+                [$controllerClass, $method] = $match;
+
+                $scopeResult = ($this->scopeChecker)($controllerClass, $method, $request);
+                if ($scopeResult instanceof ResponseInterface) {
+                    return $scopeResult;
+                }
+
+                $controller = $this->container->get($controllerClass);
+                if (!is_object($controller)) {
+                    throw new \RuntimeException('Controller must be an object');
+                }
+
+                $result = $this->container->call($controller, $method, ['request' => $request]);
+
+                if ($result instanceof ResponseInterface) {
+                    return $result;
+                }
+
+                $body = is_scalar($result) || $result === null
+                    ? (string) ($result ?? '')
+                    : json_encode($result, JSON_THROW_ON_ERROR);
+
+                return new Response(
+                    200,
+                    ['Content-Type' => 'application/json'],
+                    $body
+                );
+            }
+        };
 
         $handler = array_reduce(
             array_reverse($this->middleware),
@@ -52,47 +107,7 @@ final class Kernel
                     return $this->middleware->process($request, $this->next);
                 }
             },
-            new class ($this->router, $this->container) implements RequestHandlerInterface {
-                private Router $router;
-                private Container $container;
-
-                public function __construct(Router $router, Container $container)
-                {
-                    $this->router = $router;
-                    $this->container = $container;
-                }
-
-                public function handle(ServerRequestInterface $request): ResponseInterface
-                {
-                    $match = $this->router->match($request);
-                    if ($match === null) {
-                        return new Response(
-                            404,
-                            ['Content-Type' => 'application/json'],
-                            json_encode(['error' => 'Not found'], JSON_THROW_ON_ERROR)
-                        );
-                    }
-
-                    [$controllerClass, $method] = $match;
-
-                    $controller = $this->container->get($controllerClass);
-                    $result = $this->container->call($controller, $method, ['request' => $request]);
-
-                    if ($result instanceof ResponseInterface) {
-                        return $result;
-                    }
-
-                    $body = is_scalar($result) || $result === null
-                        ? (string) ($result ?? '')
-                        : json_encode($result, JSON_THROW_ON_ERROR);
-
-                    return new Response(
-                        200,
-                        ['Content-Type' => 'application/json'],
-                        $body
-                    );
-                }
-            }
+            $coreHandler
         );
 
         return $handler->handle($psrRequest);
@@ -125,5 +140,46 @@ final class Kernel
         }
 
         return $psrRequest;
+    }
+
+    private function checkScopes(string $controllerClass, string $method, ServerRequestInterface $request): ?ResponseInterface
+    {
+        $ref = new \ReflectionMethod($controllerClass, $method);
+        $attributes = $ref->getAttributes(RequiredScope::class);
+        if ($attributes === []) {
+            return null;
+        }
+
+        $required = [];
+        foreach ($attributes as $attr) {
+            $instance = $attr->newInstance();
+            $required = array_merge($required, $instance->scopes);
+        }
+        $required = array_values(array_unique($required));
+
+        $claims = $request->getAttribute('auth.claims');
+        $scopes = [];
+        if (is_array($claims) && isset($claims['scopes'])) {
+            $claimScopes = $claims['scopes'];
+            if (is_string($claimScopes)) {
+                $scopes = preg_split('/\s+/', trim($claimScopes)) ?: [];
+            } elseif (is_array($claimScopes)) {
+                $scopes = $claimScopes;
+            }
+        }
+
+        $missing = array_diff($required, $scopes);
+        if ($missing !== []) {
+            return new Response(
+                403,
+                ['Content-Type' => 'application/json'],
+                json_encode([
+                    'error' => 'forbidden',
+                    'required_scopes' => array_values($missing),
+                ], JSON_THROW_ON_ERROR)
+            );
+        }
+
+        return null;
     }
 }

@@ -25,6 +25,7 @@ final class DbSeedCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $config = $this->loadDatabaseConfig();
+        /** @var array{driver?:string,database?:string,host?:string,port?:string|int|null,username?:string|null,password?:string|null,charset?:string|null} $config */
         $pdo = ConnectionFactory::make($config);
 
         $runner = new SeederRunner($pdo);

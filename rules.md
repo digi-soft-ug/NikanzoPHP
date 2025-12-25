@@ -1,0 +1,14 @@
+# rules.md
+- Always use strict_types and PHP type hints for functions and properties.
+- Prefer PSR interfaces (PSR-7/15) and Symfony components already in the stack.
+- Handle errors with custom exceptions; return JSON responses with clear error messages.
+- Avoid suppressing errors; fail fast in dev, use middleware for graceful API errors.
+- Keep routing via attributes (`#[Route]`); cache with FastRouter when enabled.
+- Use DI container for service wiring; mark shared services with `#[Singleton]`.
+- Keep tests alongside code (`tests/`) and run `vendor/bin/phpunit` before commits.
+- Keep coding style PSR-12; no BOM; `declare(strict_types=1);` at top of PHP files.
+- Avoid committing secrets; config via env (`NIKANZO_*`).## Service attribute
+- Added `Nikanzo\Core\Attributes\Service` supporting flags: lazy, public, shared (all optional; defaults: lazy=false, public=true, shared=true unless `#[Singleton]`).
+- Container now respects `#[Service]` for `setLazy/setPublic/setShared` and still honors `#[Singleton]` when shared not explicitly set.
+- Use `#[Service(lazy: true)]` for lazy-loading services; `#[RequiredScope]` to guard routes (checked in Kernel) together with JWT middleware that sets `auth.claims`.
+- JWT auth middleware expects `Authorization: Bearer <token>` with HS256 signature using `NIKANZO_JWT_SECRET`; sets scopes for downstream checks.

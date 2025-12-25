@@ -28,7 +28,12 @@ final class MakeUsecaseCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $rawName = (string) $input->getArgument('name');
+        $nameArg = $input->getArgument('name');
+        if (!is_string($nameArg)) {
+            $output->writeln('<error>Argument "name" must be a string.</error>');
+            return Command::FAILURE;
+        }
+        $rawName = $nameArg;
         $normalized = $this->normalizeName($rawName);
 
         $dir = $this->basePath . '/src/Domain/UseCase' . $normalized['subPath'];
@@ -56,7 +61,7 @@ final class MakeUsecaseCommand extends Command
     {
         $clean = str_replace(['/', '\\'], '\\', trim($rawName, '\\/'));
         $parts = $clean === '' ? [] : explode('\\', $clean);
-        $class = $parts ? array_pop($parts) : 'RegisterUser';
+        $class = $parts ? (string) array_pop($parts) : 'RegisterUser';
 
         $subNamespace = $parts ? '\\' . implode('\\', $parts) : '';
         $subPath = $parts ? '/' . implode('/', $parts) : '';

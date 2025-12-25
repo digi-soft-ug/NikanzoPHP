@@ -1,0 +1,20 @@
+# architecture.md
+- Root layout:
+  - `public/`: front controller `index.php`.
+  - `bootstrap.php`: builds container, router (or FastRouter), loads modules.
+  - `src/Core/`: framework kernel, routing, DI, middleware, console, database helpers, attributes.
+  - `src/Application/`: controllers and application-facing logic.
+  - `src/Domain/`: domain models, use cases, business rules.
+  - `src/Infrastructure/`: adapters/persistence/integrations.
+  - `src/Modules/`: optional feature modules with their own `Module` class for registration.
+  - `database/`: migrations and seeds.
+  - `config/`: configuration (e.g., database.php).
+  - `tests/`: PHPUnit tests.
+  - `frontend/`: placeholder for SPA assets.
+  - `docs/`: guides.
+  - `var/cache/`: route cache for FastRouter.
+- Patterns:
+  - Attribute routing with `#[Route]`, DI via Symfony Container and custom attributes `#[Inject]/#[Singleton]`.
+  - PSR-7/15 request/response handling, middleware pipeline in Kernel.
+  - CLI via Symfony Console (`nikan`) for scaffolding and DB tasks.
+  - Migrations/seeds managed via PDO with SQLite default.

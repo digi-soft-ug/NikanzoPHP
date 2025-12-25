@@ -28,9 +28,8 @@ final class HelloControllerTest extends TestCase
 
         $this->assertSame(200, $response->getStatusCode());
         $this->assertSame('application/json', $response->getHeaderLine('Content-Type'));
-        $this->assertJsonStringEqualsJsonString(
-            json_encode(['message' => 'Hello from NikanzoPHP']),
-            (string) $response->getBody()
-        );
+        $expected = json_encode(['message' => 'Hello from NikanzoPHP']);
+        $actual = (string) $response->getBody();
+        $this->assertJsonStringEqualsJsonString($expected, $actual);
     }
 }

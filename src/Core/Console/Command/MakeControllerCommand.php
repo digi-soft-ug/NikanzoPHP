@@ -1,5 +1,4 @@
 <?php
-
 declare(strict_types=1);
 
 namespace Nikanzo\Core\Console\Command;
@@ -23,19 +22,26 @@ final class MakeControllerCommand extends Command
 
     protected function configure(): void
     {
-        $this->addArgument('name', InputArgument::REQUIRED, 'Controller class name (e.g. HelloController)');
+        $this->addArgument('name', InputArgument::REQUIRED, 'Controller class name (e.g. HelloController or Admin/DashboardController)');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $rawName = (string) $input->getArgument('name');
-        $normalized = $this->normalizeName($rawName);
+        $nameArg = $input->getArgument('name');
+        if (!is_string($nameArg)) {
+            $output->writeln('<error>Argument "name" must be a string.</error>');
+            return Command::FAILURE;
+        }
 
+        $normalized = $this->normalizeName($nameArg);
+
+        // Path resolution: logic ensures /src/Application is the root for controllers
         $dir = $this->basePath . '/src/Application' . $normalized['subPath'];
         $file = $dir . '/' . $normalized['class'] . '.php';
 
-        if (!is_dir($dir)) {
-            mkdir($dir, 0777, true);
+        if (!is_dir($dir) && !mkdir($dir, 0777, true) && !is_dir($dir)) {
+            $output->writeln('<error>Directory could not be created: ' . $dir . '</error>');
+            return Command::FAILURE;
         }
 
         if (file_exists($file)) {
@@ -44,7 +50,11 @@ final class MakeControllerCommand extends Command
         }
 
         $template = $this->buildTemplate($normalized['namespace'], $normalized['class'], $normalized['route']);
-        file_put_contents($file, $template);
+        
+        if (file_put_contents($file, $template) === false) {
+            $output->writeln('<error>Failed to write file: ' . $file . '</error>');
+            return Command::FAILURE;
+        }
 
         $output->writeln('<info>Created controller:</info> ' . $file);
 
@@ -58,13 +68,14 @@ final class MakeControllerCommand extends Command
     {
         $clean = str_replace(['/', '\\'], '\\', trim($rawName, '\\/'));
         $parts = $clean === '' ? [] : explode('\\', $clean);
-        $class = $parts ? array_pop($parts) : 'HelloController';
+        $class = !empty($parts) ? (string) array_pop($parts) : 'HelloController';
 
         $subNamespace = $parts ? '\\' . implode('\\', $parts) : '';
         $subPath = $parts ? '/' . implode('/', $parts) : '';
 
+        // Generate kebab-case route from ClassName
         $base = preg_replace('/Controller$/', '', $class) ?: $class;
-        $route = '/' . strtolower(preg_replace('/([a-z])([A-Z])/', '$1-$2', $base));
+        $route = '/' . strtolower((string) preg_replace('/([a-z])([A-Z])/', '$1-$2', $base));
         $route = str_replace('_', '-', $route);
 
         return [
@@ -77,26 +88,28 @@ final class MakeControllerCommand extends Command
 
     private function buildTemplate(string $namespace, string $class, string $route): string
     {
-        $json = "json_encode(['message' => '$class'], JSON_THROW_ON_ERROR)";
-
         return <<<PHP
 <?php
-
 declare(strict_types=1);
 
 namespace {$namespace};
 
-use Nikanzo\\Core\\Attributes\\Route;
-use Nyholm\\Psr7\\Response;
-use Psr\\Http\\Message\\ResponseInterface;
-use Psr\\Http\\Message\\ServerRequestInterface;
+use Nikanzo\Core\Attributes\Route;
+use Nyholm\Psr7\Response;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 
 final class {$class}
 {
     #[Route('{$route}', methods: ['GET'])]
-    public function __invoke(ServerRequestInterface $request): ResponseInterface
+    public function __invoke(ServerRequestInterface \$request): ResponseInterface
     {
-        return new Response(200, ['Content-Type' => 'application/json'], {$json});
+        \$message = ['message' => 'Hello from {$class}'];
+        return new Response(
+            200, 
+            ['Content-Type' => 'application/json'], 
+            (string) json_encode(\$message, JSON_THROW_ON_ERROR)
+        );
     }
 }
 PHP;

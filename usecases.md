@@ -1,0 +1,12 @@
+# usecases.md
+- Serve HTTP APIs with attribute-based routing (PSR-7 responses), e.g., `/hello`.
+- Add controllers quickly via `php nikan make:controller <Name>`.
+- Add domain use cases via `php nikan make:usecase <Name>`.
+- Run DB migrations: `php nikan db:migrate` (SQLite default; MySQL/PG supported).
+- Seed data: `php nikan db:seed` (e.g., UsersSeeder).
+- Cache routes for faster boots: `php nikan route:cache` and set `NIKANZO_FAST_ROUTER=1`.
+- Register and load feature modules under `src/Modules/*/Module.php` automatically.
+- Extend HTTP pipeline with PSR-15 middleware (e.g., AuthMiddleware) added to Kernel.
+- Run automated tests: `vendor/bin/phpunit`.
+- Run dev server: `php -S 127.0.0.1:8000 -t public public/index.php` or `docker compose up`.
+- Protect routes with JWT Auth middleware (`JwtAuthMiddleware`) and scope checks via `#[RequiredScope('admin')]` on controller methods.

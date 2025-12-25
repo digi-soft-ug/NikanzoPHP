@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use Nikanzo\Core\Database\MigrationInterface;
-use PDO;
 
 return new class implements MigrationInterface {
     public function up(PDO $pdo): void

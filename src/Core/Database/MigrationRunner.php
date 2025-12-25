@@ -22,7 +22,6 @@ final class MigrationRunner
     {
         $this->pdo = $pdo;
         $this->driver = $this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
-        $this->ensureMigrationsTable();
     }
 
     /**
@@ -30,6 +29,8 @@ final class MigrationRunner
      */
     public function migrate(string $migrationsPath): array
     {
+        $this->ensureMigrationsTable();
+
         if (!is_dir($migrationsPath)) {
             return ['ran' => [], 'skipped' => []];
         }
@@ -39,12 +40,10 @@ final class MigrationRunner
 
         $applied = $this->appliedMigrations();
         $ran = [];
-        $skipped = [];
 
         foreach ($files as $file) {
             $name = basename($file);
             if (in_array($name, $applied, true)) {
-                $skipped[] = $name;
                 continue;
             }
 
@@ -62,7 +61,7 @@ final class MigrationRunner
             }
         }
 
-        return ['ran' => $ran, 'skipped' => $skipped];
+        return ['ran' => $ran, 'skipped' => []];
     }
 
     /**
@@ -70,9 +69,19 @@ final class MigrationRunner
      */
     private function appliedMigrations(): array
     {
-        $stmt = $this->pdo->query('SELECT migration FROM migrations ORDER BY migration');
-
-        return $stmt ? array_column($stmt->fetchAll(), 'migration') : [];
+        try {
+            $stmt = $this->pdo->query('SELECT migration FROM migrations ORDER BY migration');
+            $result = $stmt ? array_column($stmt->fetchAll(), 'migration') : [];
+            /** @var string[] $result */
+            return $result;
+        } catch (\Throwable $e) {
+            // Table may have been dropped; ensure and retry once.
+            $this->ensureMigrationsTable();
+            $stmt = $this->pdo->query('SELECT migration FROM migrations ORDER BY migration');
+            $result = $stmt ? array_column($stmt->fetchAll(), 'migration') : [];
+            /** @var string[] $result */
+            return $result;
+        }
     }
 
     private function recordMigration(string $name): void

@@ -8,7 +8,7 @@ use Nikanzo\Core\Attributes\Route;
 use Psr\Http\Message\ServerRequestInterface;
 use ReflectionClass;
 
-final class Router
+final class Router implements RouterInterface
 {
     /**
      * @var array<string, array<string, array{0: string, 1: string}>>
@@ -17,6 +17,12 @@ final class Router
 
     public function registerController(string $controllerClass): void
     {
+        if (!class_exists($controllerClass)) {
+            throw new \InvalidArgumentException('Controller class does not exist: ' . $controllerClass);
+        }
+        if (!class_exists($controllerClass)) {
+            throw new \InvalidArgumentException('Controller class does not exist: ' . $controllerClass);
+        }
         $reflection = new ReflectionClass($controllerClass);
         foreach ($reflection->getMethods() as $method) {
             foreach ($method->getAttributes(Route::class) as $attribute) {

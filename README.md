@@ -51,6 +51,11 @@ php nikan db:seed      # runs database/seeds (e.g. UsersSeeder)
 - `Module` implements `Nikanzo\Core\ModuleInterface` and receives `Container` + `Router` to register services/routes.
 - `bootstrap.php` loads modules automatically.
 
+## Fast router cache
+- Enable cached routing via env: `NIKANZO_FAST_ROUTER=1` (uses `var/cache/routes.php`).
+- Warm cache via CLI: `php nikan route:cache` (scans `src/Application` and `src/Modules`).
+- When cache is missing in fast mode, bootstrap builds routes (including modules) and persists the cache automatically.
+
 ## Reuse via Composer
 - Package is `type: "library"` and PSR-4 (`Nikanzo\\` -> `src/`).
 - In another project (e.g. `cms-boilerplate`) require it with:

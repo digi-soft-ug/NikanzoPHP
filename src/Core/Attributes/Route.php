@@ -10,12 +10,17 @@ use Attribute;
 final class Route
 {
     /**
-     * @param string[] $methods
+     * @var string
      */
     private string $path;
-    /** @var string[] */
+    /**
+     * @var array<int, string>
+     */
     private array $methods;
 
+    /**
+     * @param array<int, string> $methods
+     */
     public function __construct(
         string $path,
         array $methods = ['GET']

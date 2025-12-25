@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nikanzo\Core\Container;
 
 use Nikanzo\Core\Attributes\Inject;
+use Nikanzo\Core\Attributes\Service;
 use Nikanzo\Core\Attributes\Singleton;
 use Psr\Container\ContainerInterface;
 use ReflectionClass;
@@ -26,10 +27,12 @@ final class Container implements ContainerInterface
 
     public function register(string $id): void
     {
+        $config = $this->resolveServiceConfig($id);
         $definition = new Definition($id);
         $definition->setAutowired(true);
-        $definition->setPublic(true);
-        $definition->setShared($this->isSingleton($id));
+        $definition->setPublic($config['public']);
+        $definition->setShared($config['shared']);
+        $definition->setLazy($config['lazy']);
 
         $this->builder->setDefinition($id, $definition);
         $this->compiled = false;
@@ -143,5 +146,46 @@ final class Container implements ContainerInterface
         $ref = new ReflectionClass($class);
 
         return (bool) $ref->getAttributes(Singleton::class);
+    }
+
+    /**
+     * @return array{lazy: bool, public: bool, shared: bool}
+     */
+    private function resolveServiceConfig(string $class): array
+    {
+        $config = [
+            'lazy' => false,
+            'public' => true,
+            'shared' => true,
+        ];
+
+        if (!class_exists($class)) {
+            return $config;
+        }
+
+        $ref = new ReflectionClass($class);
+        $serviceAttrs = $ref->getAttributes(Service::class);
+
+        if ($serviceAttrs !== []) {
+            $service = $serviceAttrs[0]->newInstance();
+            if ($service->lazy !== null) {
+                $config['lazy'] = $service->lazy;
+            }
+            if ($service->public !== null) {
+                $config['public'] = $service->public;
+            }
+            if ($service->shared !== null) {
+                $config['shared'] = $service->shared;
+            }
+        }
+
+        if ($serviceAttrs === [] && $this->isSingleton($class)) {
+            $config['shared'] = true;
+        } elseif ($serviceAttrs !== [] && $serviceAttrs[0]->newInstance()->shared === null && $this->isSingleton($class)) {
+            // If shared not set on Service, fall back to Singleton attribute
+            $config['shared'] = true;
+        }
+
+        return $config;
     }
 }

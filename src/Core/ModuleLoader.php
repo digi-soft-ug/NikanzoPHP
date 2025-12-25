@@ -10,9 +10,9 @@ final class ModuleLoader
 {
     private string $modulesPath;
     private Container $container;
-    private Router $router;
+    private RouterInterface $router;
 
-    public function __construct(string $modulesPath, Container $container, Router $router)
+    public function __construct(string $modulesPath, Container $container, RouterInterface $router)
     {
         $this->modulesPath = $modulesPath;
         $this->container = $container;
@@ -47,7 +47,7 @@ final class ModuleLoader
             $this->container->register($class);
             $module = $this->container->get($class);
 
-            if ($module instanceof ModuleInterface) {
+            if ($module instanceof ModuleInterface && $this->router instanceof Router) {
                 $module->register($this->container, $this->router);
                 $loaded[] = $class;
             }

@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use Nikanzo\Core\Database\SeederInterface;
-use PDO;
 
 return new class implements SeederInterface {
     public function run(PDO $pdo): void
