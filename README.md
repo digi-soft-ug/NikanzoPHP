@@ -73,6 +73,22 @@ php nikan db:seed      # runs database/seeds (e.g. UsersSeeder)
 ## License
 MIT
 
+## Tests
+Um die Tests auszuführen, stelle sicher, dass die Abhängigkeiten installiert sind:
+
+```bash
+composer install
+vendor/bin/phpunit
+```
+
+Die Konfiguration erfolgt über die Datei `phpunit.xml`. Tests liegen im Verzeichnis `tests/`.
+
+## CI/CD
+Dieses Projekt enthält einen GitHub Actions Workflow für automatisierte Tests und Composer-Checks.
+
+- Workflow-Datei: `.github/workflows/ci.yml`
+- Lässt sich lokal mit [act](https://github.com/nektos/act) oder in Docker-Umgebungen testen.
+
 ## Docker (Local Dev)
 - Build & start dev server: `docker compose up --build`
 - Install deps inside container: `docker compose run --rm app composer install`
