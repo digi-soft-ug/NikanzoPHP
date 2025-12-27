@@ -6,7 +6,9 @@
 - Seed data: `php nikan db:seed` (e.g., UsersSeeder).
 - Cache routes for faster boots: `php nikan route:cache` and set `NIKANZO_FAST_ROUTER=1`.
 - Register and load feature modules under `src/Modules/*/Module.php` automatically.
-- Extend HTTP pipeline with PSR-15 middleware (e.g., AuthMiddleware) added to Kernel.
+- Extend HTTP pipeline with PSR-15 middleware (ErrorHandler, Auth, RateLimit) added to Kernel.
+- Protect routes with JWT (`JwtAuthMiddleware`) and `#[RequiredScope]` on controller methods.
+- Render templates via Twig with `TemplateRenderer` (optional) using `templates/`.
 - Run automated tests: `vendor/bin/phpunit`.
 - Run dev server: `php -S 127.0.0.1:8000 -t public public/index.php` or `docker compose up`.
-- Protect routes with JWT Auth middleware (`JwtAuthMiddleware`) and scope checks via `#[RequiredScope('admin')]` on controller methods.
+- Use hooks via `HookDispatcher`/`HookInterface` for extension points.

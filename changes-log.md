@@ -1,10 +1,13 @@
 # changes-log.md
 - Added core framework scaffold (Kernel, Router, DI container, middleware, HelloController, PHPUnit test).
-- Added CLI `nikan` with make:controller, make:usecase, db:migrate, db:seed, route:cache commands.
+- Added CLI `nikan` with make:controller, make:usecase, db:migrate, db:seed, route:cache commands (configurable via config/cli.php).
 - Implemented migration/seed system (SQLite default, MySQL/PG supported) and sample migration/seeder.
-- Added ModuleLoader and module folder for feature modules.
+- Added ModuleLoader and module folder for feature modules; added HookDispatcher/HookInterface for extensibility.
 - Added FastRouter with caching and bootstrap integration plus cache warming.
 - Added Docker setup (Dockerfile, docker-compose.yml) for local dev.
-- Updated composer.json to `digi-soft-ug/nikanzophp`, MIT license, homepage.
-- Added README and DEVELOPER_GUIDE with setup, CLI, Docker, cache notes.
-- Added project meta docs: rules.md, architecture.md, usecases.md, changes-log.md.
+- Updated composer.json to `digi-soft-ug/nikanzophp`, MIT license, homepage; added Twig and Monolog deps.
+- Added Twig TemplateRenderer (optional), view config, templates folder.
+- Added JWT auth middleware + RequiredScope checks; error handler middleware; rate limit middleware.
+- Added Service attribute for lazy/public/shared controls; premium scaffolding folders and CI workflow skeleton.
+- Added async Fiber-based AsyncFileReader utility (optional high-perf).
+- Added docs: README/DEVELOPER_GUIDE/rules/architecture/usecases/changes-log; premium-docs scaffold.

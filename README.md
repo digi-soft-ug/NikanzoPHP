@@ -1,14 +1,15 @@
-﻿# NikanzoPHP
+# NikanzoPHP
 
 Open-source, modular PHP framework with attribute routing, PSR-7/15, DI, CLI, and migrations. Hosted at https://github.com/digi-soft-ug/NikanzoPHP.
 
 ## Features
 - Routing with PHP 8 attributes (`#[Route]`), PSR-7 responses
-- PSR-15 middleware pipeline (e.g. AuthMiddleware)
-- DI container with `#[Inject]` / `#[Singleton]`, built on Symfony DependencyInjection
-- CLI `php nikan`: `make:controller`, `make:usecase`, `db:migrate`, `db:seed`
+- PSR-15 middleware pipeline (e.g. Auth, ErrorHandler, RateLimit, JWT)
+- DI container with `#[Inject]` / `#[Singleton]` / `#[Service]`, built on Symfony DependencyInjection
+- Optional Twig templating via `TemplateRenderer` (`templates/`)
+- CLI `php nikan`: `make:controller`, `make:usecase`, `db:migrate`, `db:seed`, `route:cache`
 - Migration system (SQLite default, MySQL/PostgreSQL possible) with `migrations` status table
-- ModuleLoader auto-loads `src/Modules/*/Module` for reuse
+- ModuleLoader auto-loads `src/Modules/*/Module` for reuse; Hooks for extension points
 
 ## Installation
 ```bash
@@ -50,6 +51,7 @@ php nikan db:seed      # runs database/seeds (e.g. UsersSeeder)
 - Put modules under `src/Modules/<Name>/Module.php`.
 - `Module` implements `Nikanzo\Core\ModuleInterface` and receives `Container` + `Router` to register services/routes.
 - `bootstrap.php` loads modules automatically.
+- Hooks: use `HookDispatcher` + `HookInterface` for extension points.
 
 ## Fast router cache
 - Enable cached routing via env: `NIKANZO_FAST_ROUTER=1` (uses `var/cache/routes.php`).

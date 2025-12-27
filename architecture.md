@@ -2,19 +2,24 @@
 - Root layout:
   - `public/`: front controller `index.php`.
   - `bootstrap.php`: builds container, router (or FastRouter), loads modules.
-  - `src/Core/`: framework kernel, routing, DI, middleware, console, database helpers, attributes.
+  - `src/Core/`: kernel, routing, DI, middleware, console, database helpers, attributes, template renderer, hooks.
   - `src/Application/`: controllers and application-facing logic.
   - `src/Domain/`: domain models, use cases, business rules.
   - `src/Infrastructure/`: adapters/persistence/integrations.
   - `src/Modules/`: optional feature modules with their own `Module` class for registration.
+  - `src/Premium/`: reserved for premium features/modules.
   - `database/`: migrations and seeds.
-  - `config/`: configuration (e.g., database.php).
+  - `config/`: configuration (e.g., database.php, view.php, cli.php).
+  - `templates/`: Twig templates (optional).
   - `tests/`: PHPUnit tests.
   - `frontend/`: placeholder for SPA assets.
-  - `docs/`: guides.
-  - `var/cache/`: route cache for FastRouter.
+  - `docs/` and `premium-docs/`: guides.
+  - `var/cache/`: route cache (and Twig cache if enabled).
+  - `.github/workflows/`: CI scaffold.
+  - `premium-config/`: premium-only config overlay.
 - Patterns:
-  - Attribute routing with `#[Route]`, DI via Symfony Container and custom attributes `#[Inject]/#[Singleton]`.
-  - PSR-7/15 request/response handling, middleware pipeline in Kernel.
-  - CLI via Symfony Console (`nikan`) for scaffolding and DB tasks.
+  - Attribute routing with `#[Route]`, DI via Symfony Container and custom attributes `#[Inject]/#[Singleton]/#[Service]`.
+  - PSR-7/15 middleware pipeline in Kernel (short-circuits on response), scope checks via `#[RequiredScope]`.
+  - CLI via Symfony Console (`nikan`) for scaffolding, DB tasks, route cache.
   - Migrations/seeds managed via PDO with SQLite default.
+  - Hooks/dispatcher for extensibility; module loader for feature packs.
