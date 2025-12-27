@@ -1,0 +1,58 @@
+# NikanzoPHP .gitignore
+
+# Composer dependencies
+/vendor/
+composer.lock
+.env
+
+
+# Node modules (if any frontend tooling is used)
+/node_modules/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.idea/
+.vscode/
+*.sublime-workspace
+*.sublime-project
+
+# Log files
+*.log
+
+# Cache and build
+/var/cache/
+/var/log/
+
+# PHPUnit
+.phpunit.result.cache
+
+# Coverage reports
+coverage/
+
+# Environment files
+.env
+.env.*
+
+# Docker
+*.pid
+
+# User uploads (if any)
+/public/uploads/
+
+# Misc
+*.swp
+*.bak
+*.tmp
+
+# Ignore database dumps
+*.sql
+*.sqlite
+
+# Ignore test output
+/tests/output/
+
+# Ignore local config overrides
+config/local.php

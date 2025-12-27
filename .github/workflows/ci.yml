@@ -1,25 +1,35 @@
-name: CI
+name: PHP Composer CI
 
 on:
   push:
+    branches: [ "main" ]
   pull_request:
+    branches: [ "main" ]
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - name: Set git safe.directory
-        run: git config --global --add safe.directory /var/www/html
-      - name: Install git
-        run: sudo apt-get update && sudo apt-get install -y git
-      - uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.3'
-          coverage: none
-      - name: Composer clear cache
-        run: composer clear-cache
-      - name: Install dependencies
-        run: composer install --no-interaction --no-progress --prefer-dist
-      - name: Run tests
-        run: vendor/bin/phpunit
+    - uses: actions/checkout@v4
+
+    - name: Validate composer.json and composer.lock
+      run: composer validate --strict
+
+    - name: Cache Composer packages
+      id: composer-cache
+      uses: actions/cache@v4
+      with:
+        path: vendor
+        key: ${{ runner.os }}-php-${{ hashFiles('**`/composer.lock`') }}
+        restore-keys: |
+          ${{ `runner.os` }}-php-
+
+    - name: Install dependencies
+      # if cache hit, it will be a no-op
+      # if cache miss, it will download dependencies
+      run: composer install --prefer-dist --no-progress
+
+    # Add your other steps here, like running tests
+    # - name: Run test suite
+    #   run:` vendor/bin/phpunit`
