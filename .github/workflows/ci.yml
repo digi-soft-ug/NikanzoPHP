@@ -11,11 +11,15 @@ jobs:
       - uses: actions/checkout@v4
       - name: Set git safe.directory
         run: git config --global --add safe.directory /var/www/html
+      - name: Install git
+        run: sudo apt-get update && sudo apt-get install -y git
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
           coverage: none
+      - name: Composer clear cache
+        run: composer clear-cache
       - name: Install dependencies
-        run: composer install --no-interaction --no-progress
+        run: composer install --no-interaction --no-progress --prefer-dist
       - name: Run tests
-        run: vendor/bin/phpunit || true
+        run: vendor/bin/phpunit

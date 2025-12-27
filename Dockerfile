@@ -17,6 +17,9 @@ WORKDIR /var/www/html
 COPY composer.json ./
 RUN composer install --no-dev --prefer-dist --no-progress --no-interaction || true
 
+COPY tools.sh /usr/local/bin/tools.sh
+RUN chmod +x /usr/local/bin/tools.sh
+
 COPY . .
 
 # Default command: dev server on port 8000
