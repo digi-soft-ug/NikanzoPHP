@@ -3,6 +3,7 @@
   "description": "Open-source modular PHP framework with attribute routing, DI, middleware, CLI, and migrations",
   "homepage": "https://github.com/digi-soft-ug/NikanzoPHP",
   "license": "MIT",
+  "version": "1.0.0",
   "type": "library",
   "require": {
     "php": "^8.3",

@@ -9,6 +9,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Set git safe.directory
+        run: git config --global --add safe.directory /var/www/html
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
