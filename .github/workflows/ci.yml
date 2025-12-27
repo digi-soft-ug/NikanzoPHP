@@ -2,9 +2,9 @@ name: PHP Composer CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "master" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "master" ]
 
 jobs:
   build:
@@ -21,15 +21,18 @@ jobs:
       uses: actions/cache@v4
       with:
         path: vendor
-        key: ${{ runner.os }}-php-${{ hashFiles('**`/composer.lock`') }}
+        key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
         restore-keys: |
-          ${{ `runner.os` }}-php-
+          ${{ runner.os }}-php-
+    - name: Install git
+      run: sudo apt-get update && sudo apt-get install -y git
+
+    - name: Set git safe.directory
+      run: git config --global --add safe.directory /var/www/html
 
     - name: Install dependencies
       # if cache hit, it will be a no-op
       # if cache miss, it will download dependencies
       run: composer install --prefer-dist --no-progress
-
-    # Add your other steps here, like running tests
-    # - name: Run test suite
-    #   run:` vendor/bin/phpunit`
+    - name: Run test suite
+      run: vendor/bin/phpunit
