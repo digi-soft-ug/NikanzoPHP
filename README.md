@@ -18,6 +18,25 @@ cd NikanzoPHP
 composer install
 ```
 
+---
+
+## Community & Promotion
+
+### Social Media Post (Reddit r/php & Twitter/X)
+
+🚀 Neues Open-Source-Framework: NikanzoPHP!  
+Entdecke ein modernes, modulares PHP-Framework mit PHP 8-Attribute-Routing, flexibler Modularität und leistungsstarken CLI-Tools. Entwickle skalierbare Anwendungen mit klarer Architektur und moderner Dependency Injection.  
+Jetzt auf GitHub: https://github.com/digi-soft-ug/NikanzoPHP  
+#php #framework #opensource #php8
+
+### README Badges (Markdown)
+
+```markdown
+[![CI](https://github.com/digi-soft-ug/NikanzoPHP/actions/workflows/ci.yml/badge.svg)](https://github.com/digi-soft-ug/NikanzoPHP/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/digi-soft-ug/NikanzoPHP/branch/main/graph/badge.svg)](https://codecov.io/gh/digi-soft-ug/NikanzoPHP)
+[![Packagist Downloads](https://img.shields.io/packagist/dt/digi-soft-ug/nikanzophp.svg)](https://packagist.org/packages/digi-soft-ug/nikanzophp)
+```
+
 ## Quickstart
 - Dev server: `php -S 127.0.0.1:8000 -t public public/index.php`
 - Hello endpoint: `http://127.0.0.1:8000/hello`

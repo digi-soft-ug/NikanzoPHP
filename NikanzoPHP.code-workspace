@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"geminicodeassist.inlineSuggestions.nextEditPredictions": true,
+		"geminicodeassist.agentDebugMode": true
+	}
+}

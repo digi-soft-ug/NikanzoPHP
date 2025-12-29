@@ -7,6 +7,12 @@ RUN apk add --no-cache git unzip sqlite-dev oniguruma-dev libzip-dev \
     && docker-php-ext-install pdo pdo_sqlite \
     && apk del sqlite-dev oniguruma-dev libzip-dev
 
+# Install Xdebug for code coverage
+RUN apk add --no-cache $PHPIZE_DEPS linux-headers \
+    && pecl install xdebug \
+    && docker-php-ext-enable xdebug \
+    && rm -rf /tmp/pear
+
 # Install Composer
 ENV COMPOSER_ALLOW_SUPERUSER=1
 RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" \
