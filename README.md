@@ -1,3 +1,7 @@
+
+
+[![CI](https://github.com/digi-soft-ug/NikanzoPHP/actions/workflows/ci.yml/badge.svg)](https://github.com/digi-soft-ug/NikanzoPHP/actions/workflows/ci.yml) [![codecov](https://codecov.io/gh/digi-soft-ug/NikanzoPHP/branch/main/graph/badge.svg)](https://codecov.io/gh/digi-soft-ug/NikanzoPHP) [![Packagist Downloads](https://img.shields.io/packagist/dt/digi-soft-ug/nikanzophp.svg)](https://packagist.org/packages/digi-soft-ug/nikanzophp)
+
 # NikanzoPHP
 
 Open-source, modular PHP framework with attribute routing, PSR-7/15, DI, CLI, and migrations. Hosted at https://github.com/digi-soft-ug/NikanzoPHP.
@@ -29,13 +33,6 @@ Entdecke ein modernes, modulares PHP-Framework mit PHP 8-Attribute-Routing, flex
 Jetzt auf GitHub: https://github.com/digi-soft-ug/NikanzoPHP  
 #php #framework #opensource #php8
 
-### README Badges (Markdown)
-
-```markdown
-[![CI](https://github.com/digi-soft-ug/NikanzoPHP/actions/workflows/ci.yml/badge.svg)](https://github.com/digi-soft-ug/NikanzoPHP/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/digi-soft-ug/NikanzoPHP/branch/main/graph/badge.svg)](https://codecov.io/gh/digi-soft-ug/NikanzoPHP)
-[![Packagist Downloads](https://img.shields.io/packagist/dt/digi-soft-ug/nikanzophp.svg)](https://packagist.org/packages/digi-soft-ug/nikanzophp)
-```
 
 ## Quickstart
 - Dev server: `php -S 127.0.0.1:8000 -t public public/index.php`
