@@ -23,10 +23,10 @@ use Psr\Log\NullLogger;
  *   LEMONSQUEEZY_STORE_ID      – numeric store ID shown in LS dashboard
  *   LEMONSQUEEZY_WEBHOOK_SECRET – signing secret set in LS webhook settings
  */
-final class LemonSqueezyClient
+final class LemonSqueezyClient implements LemonSqueezyClientInterface
 {
     private const BASE_URL = 'https://api.lemonsqueezy.com/v1';
-    private const TIMEOUT  = 10;
+    private const TIMEOUT = 10;
 
     /**
      * @param string        $apiKey      Bearer token (LEMONSQUEEZY_API_KEY)
@@ -35,12 +35,21 @@ final class LemonSqueezyClient
      *                                   Signature: fn(string $path, array $payload): array
      * @param LoggerInterface $logger
      */
+    private $apiKey;
+    private $storeId;
+    private $httpAdapter;
+    private $logger;
+
     public function __construct(
-        private readonly string $apiKey,
-        private readonly string $storeId,
-        private readonly ?\Closure $httpAdapter = null,
-        private readonly LoggerInterface $logger = new NullLogger(),
+        string $apiKey,
+        string $storeId,
+        ?\Closure $httpAdapter = null,
+        LoggerInterface $logger = null
     ) {
+        $this->apiKey = $apiKey;
+        $this->storeId = $storeId;
+        $this->httpAdapter = $httpAdapter;
+        $this->logger = $logger ?: new NullLogger();
     }
 
     // ── Public API ────────────────────────────────────────────────────────────
@@ -64,14 +73,14 @@ final class LemonSqueezyClient
         string $variantId,
         int $userId,
         string $userEmail,
-        string $successUrl,
+        string $successUrl
     ): string {
         $payload = [
             'data' => [
-                'type'       => 'checkouts',
+                'type' => 'checkouts',
                 'attributes' => [
-                    'checkout_data'   => [
-                        'email'  => $userEmail,
+                    'checkout_data' => [
+                        'email' => $userEmail,
                         'custom' => ['user_id' => (string) $userId],
                     ],
                     'product_options' => [
@@ -79,15 +88,15 @@ final class LemonSqueezyClient
                     ],
                 ],
                 'relationships' => [
-                    'store'   => ['data' => ['type' => 'stores',   'id' => $this->storeId]],
-                    'variant' => ['data' => ['type' => 'variants',  'id' => $variantId]],
+                    'store' => ['data' => ['type' => 'stores', 'id' => $this->storeId]],
+                    'variant' => ['data' => ['type' => 'variants', 'id' => $variantId]],
                 ],
             ],
         ];
 
         $this->logger->debug('Creating LS checkout', [
             'variant_id' => $variantId,
-            'user_id'    => $userId,
+            'user_id' => $userId,
         ]);
 
         $response = $this->post('/checkouts', $payload);
@@ -112,16 +121,15 @@ final class LemonSqueezyClient
      *
      * @param string $rawBody  The raw, unparsed request body string
      * @param string $signature The value of the X-Signature header
-     * @param string $secret   LEMONSQUEEZY_WEBHOOK_SECRET from your env
      */
-    public function verifyWebhookSignature(string $rawBody, string $signature, string $secret): bool
+    public function verifyWebhookSignature(string $rawBody, string $signature): bool
     {
+        // Use env for secret to match interface
+        $secret = getenv('LEMONSQUEEZY_WEBHOOK_SECRET') ?: '';
         if ($signature === '' || $secret === '' || $rawBody === '') {
             return false;
         }
-
         $expected = hash_hmac('sha256', $rawBody, $secret);
-
         return hash_equals($expected, strtolower($signature));
     }
 
@@ -152,7 +160,7 @@ final class LemonSqueezyClient
      */
     private function curlPost(string $path, array $payload): array
     {
-        $url  = self::BASE_URL . $path;
+        $url = self::BASE_URL . $path;
         $body = json_encode($payload, JSON_THROW_ON_ERROR);
 
         $ch = curl_init($url);
@@ -162,19 +170,19 @@ final class LemonSqueezyClient
 
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_POST           => true,
-            CURLOPT_POSTFIELDS     => $body,
-            CURLOPT_TIMEOUT        => self::TIMEOUT,
-            CURLOPT_HTTPHEADER     => [
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => $body,
+            CURLOPT_TIMEOUT => self::TIMEOUT,
+            CURLOPT_HTTPHEADER => [
                 'Authorization: Bearer ' . $this->apiKey,
                 'Content-Type: application/vnd.api+json',
                 'Accept: application/vnd.api+json',
             ],
         ]);
 
-        $raw    = curl_exec($ch);
+        $raw = curl_exec($ch);
         $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $error  = curl_error($ch);
+        $error = curl_error($ch);
         curl_close($ch);
 
         if ($raw === false || $error !== '') {
@@ -202,7 +210,7 @@ final class LemonSqueezyClient
      */
     public static function fromEnv(LoggerInterface $logger = new NullLogger()): self
     {
-        $apiKey  = (string) (getenv('LEMONSQUEEZY_API_KEY')  ?: '');
+        $apiKey = (string) (getenv('LEMONSQUEEZY_API_KEY') ?: '');
         $storeId = (string) (getenv('LEMONSQUEEZY_STORE_ID') ?: '');
 
         if ($apiKey === '' || $storeId === '') {

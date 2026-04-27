@@ -6,7 +6,7 @@ namespace Nikanzo\Application;
 
 use Nikanzo\Core\Attributes\Route;
 use Nikanzo\Core\Controller\AbstractController;
-use Nikanzo\Services\LemonSqueezyClient;
+use Nikanzo\Services\LemonSqueezyClientInterface;
 use Nikanzo\Services\LicenseManager;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -42,11 +42,18 @@ use Psr\Log\NullLogger;
  */
 final class BillingController extends AbstractController
 {
+    private $lsClient;
+    private $licenseManager;
+    private $logger;
+
     public function __construct(
-        private readonly LemonSqueezyClient $lsClient,
-        private readonly LicenseManager $licenseManager,
-        private readonly LoggerInterface $logger = new NullLogger(),
+        LemonSqueezyClientInterface $lsClient,
+        LicenseManager $licenseManager,
+        LoggerInterface $logger = new NullLogger()
     ) {
+        $this->lsClient = $lsClient;
+        $this->licenseManager = $licenseManager;
+        $this->logger = $logger;
     }
 
     // ── POST /api/billing/checkout ────────────────────────────────────────────
@@ -75,21 +82,21 @@ final class BillingController extends AbstractController
         }
 
         $userId = (int) $claims['sub'];
-        $user   = $this->licenseManager->findUser($userId);
+        $user = $this->licenseManager->findUser($userId);
 
         if ($user === null) {
             return $this->error('User not found', 404);
         }
 
         /** @var array<string, mixed> $body */
-        $body      = (array) ($request->getParsedBody() ?? []);
+        $body = (array) ($request->getParsedBody() ?? []);
         $variantId = trim((string) ($body['variant_id'] ?? ''));
 
         if ($variantId === '') {
             return $this->error('variant_id is required', 422);
         }
 
-        $appUrl     = rtrim((string) (getenv('APP_URL') ?: ''), '/');
+        $appUrl = rtrim((string) (getenv('APP_URL') ?: ''), '/');
         $successUrl = trim((string) ($body['success_url'] ?? ''));
         if ($successUrl === '') {
             $successUrl = $appUrl !== '' ? $appUrl . '/dashboard' : '/dashboard';
@@ -99,14 +106,14 @@ final class BillingController extends AbstractController
 
         try {
             $url = $this->lsClient->createCheckout(
-                variantId:  $variantId,
-                userId:     $userId,
-                userEmail:  $userEmail,
-                successUrl: $successUrl,
+                $variantId,
+                $user['id'],
+                $user['email'],
+                $successUrl
             );
         } catch (\Throwable $e) {
             $this->logger->error('Checkout creation failed', [
-                'user_id'   => $userId,
+                'user_id' => $userId,
                 'exception' => $e->getMessage(),
             ]);
 
@@ -131,14 +138,14 @@ final class BillingController extends AbstractController
     #[Route('/api/billing/webhook', methods: ['POST'])]
     public function webhook(ServerRequestInterface $request): ResponseInterface
     {
-        $rawBody   = (string) $request->getBody();
+        $rawBody = (string) $request->getBody();
         $signature = $request->getHeaderLine('X-Signature');
-        $secret    = (string) (getenv('LEMONSQUEEZY_WEBHOOK_SECRET') ?: '');
+        $secret = (string) (getenv('LEMONSQUEEZY_WEBHOOK_SECRET') ?: '');
 
-        if (!$this->lsClient->verifyWebhookSignature($rawBody, $signature, $secret)) {
+        if (!$this->lsClient->verifyWebhookSignature($rawBody, $signature)) {
             $this->logger->warning('Webhook signature verification failed', [
                 'signature' => substr($signature, 0, 8) . '…',
-                'ip'        => $request->getServerParams()['REMOTE_ADDR'] ?? 'unknown',
+                'ip' => $request->getServerParams()['REMOTE_ADDR'] ?? 'unknown',
             ]);
 
             return $this->error('Invalid signature', 401);
@@ -151,15 +158,15 @@ final class BillingController extends AbstractController
             return $this->error('Malformed JSON payload', 400);
         }
 
-        $eventName  = (string) ($payload['meta']['event_name'] ?? '');
-        $customData = (array)  ($payload['meta']['custom_data'] ?? []);
-        $attrs      = (array)  ($payload['data']['attributes']  ?? []);
-        $subId      = (string) ($payload['data']['id']          ?? '');
-        $userId     = (int)    ($customData['user_id']          ?? 0);
+        $eventName = (string) ($payload['meta']['event_name'] ?? '');
+        $customData = (array) ($payload['meta']['custom_data'] ?? []);
+        $attrs = (array) ($payload['data']['attributes'] ?? []);
+        $subId = (string) ($payload['data']['id'] ?? '');
+        $userId = (int) ($customData['user_id'] ?? 0);
 
         $this->logger->info('Lemon Squeezy webhook received', [
-            'event'           => $eventName,
-            'user_id'         => $userId,
+            'event' => $eventName,
+            'user_id' => $userId,
             'subscription_id' => $subId,
         ]);
 
@@ -168,8 +175,8 @@ final class BillingController extends AbstractController
         } catch (\Throwable $e) {
             // Log but do NOT re-throw — always return 2xx to prevent LS retries
             $this->logger->error('Webhook handler threw', [
-                'event'     => $eventName,
-                'user_id'   => $userId,
+                'event' => $eventName,
+                'user_id' => $userId,
                 'exception' => $e->getMessage(),
             ]);
         }
@@ -192,9 +199,9 @@ final class BillingController extends AbstractController
         }
 
         match ($event) {
-            'subscription_activated'      => $this->onActivated($userId, $subId, $attrs),
-            'subscription_cancelled'      => $this->onCancelled($userId, $attrs),
-            'subscription_expired'        => $this->onExpired($userId),
+            'subscription_activated' => $this->onActivated($userId, $subId, $attrs),
+            'subscription_cancelled' => $this->onCancelled($userId, $attrs),
+            'subscription_expired' => $this->onExpired($userId),
             'subscription_payment_success' => $this->onPaymentSuccess($userId, $attrs),
             default => $this->logger->debug('Unhandled LS event, ignoring', ['event' => $event]),
         };
@@ -216,9 +223,9 @@ final class BillingController extends AbstractController
         $this->licenseManager->upgradeUser($userId, $subId, $renewsAt);
 
         $this->logger->info('User upgraded to premium via LS', [
-            'user_id'         => $userId,
+            'user_id' => $userId,
             'subscription_id' => $subId,
-            'renews_at'       => $renewsAt?->format(\DateTimeInterface::ATOM),
+            'renews_at' => $renewsAt?->format(\DateTimeInterface::ATOM),
         ]);
     }
 
@@ -275,7 +282,7 @@ final class BillingController extends AbstractController
             // Edge case: payment event arrives before subscription_activated.
             // Log and skip — activation event will set the correct state.
             $this->logger->warning('payment_success before activation, skipping extend', [
-                'user_id'   => $userId,
+                'user_id' => $userId,
                 'exception' => $e->getMessage(),
             ]);
         }
