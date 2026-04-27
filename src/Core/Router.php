@@ -4,54 +4,43 @@ declare(strict_types=1);
 
 namespace Nikanzo\Core;
 
-use Nikanzo\Core\Attributes\Route;
+use Nikanzo\Core\Http\RouteExtractor;
 use Psr\Http\Message\ServerRequestInterface;
-use ReflectionClass;
 
 final class Router implements RouterInterface
 {
     /**
-     * @var array<string, array<string, array{0: string, 1: string}>>
+     * [ HTTP_METHOD => [ pattern => [class, method, paramNames] ] ]
+     *
+     * @var array<string, array<string, array{0: string, 1: string, 2: array<string,string>}>>
      */
     private array $routes = [];
 
+    private string $prefix;
+
+    public function __construct(string $prefix = '')
+    {
+        $this->prefix = $prefix;
+    }
+
     public function registerController(string $controllerClass): void
     {
-        if (!class_exists($controllerClass)) {
-            throw new \InvalidArgumentException('Controller class does not exist: ' . $controllerClass);
-        }
-        if (!class_exists($controllerClass)) {
-            throw new \InvalidArgumentException('Controller class does not exist: ' . $controllerClass);
-        }
-        $reflection = new ReflectionClass($controllerClass);
-        foreach ($reflection->getMethods() as $method) {
-            foreach ($method->getAttributes(Route::class) as $attribute) {
-                $route = $attribute->newInstance();
-                $path = $this->normalizePath($route->getPath());
-
-                foreach ($route->getMethods() as $httpMethod) {
-                    $methodKey = strtoupper($httpMethod);
-                    $this->routes[$methodKey][$path] = [$controllerClass, $method->getName()];
-                }
+        foreach (RouteExtractor::extract($controllerClass, $this->prefix) as $method => $methodRoutes) {
+            foreach ($methodRoutes as $pattern => $handler) {
+                $this->routes[$method][$pattern] = $handler;
             }
         }
     }
 
     /**
-     * @return array{0: string, 1: string}|null
+     * @return array{0: string, 1: string, 2: array<string,string>}|null
      */
     public function match(ServerRequestInterface $request): ?array
     {
-        $method = strtoupper($request->getMethod());
-        $path = $this->normalizePath($request->getUri()->getPath());
-
-        return $this->routes[$method][$path] ?? null;
-    }
-
-    private function normalizePath(string $path): string
-    {
-        $normalized = '/' . ltrim($path, '/');
-
-        return rtrim($normalized, '/') ?: '/';
+        return RouteExtractor::matchPath(
+            $request->getMethod(),
+            $request->getUri()->getPath(),
+            $this->routes
+        );
     }
 }

@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}NikanzoPHP{% endblock %}</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #f5f5f7;
+            color: #1d1d1f;
+            min-height: 100vh;
+        }
+
+        /* ── Navigation ── */
+        nav {
+            background: #fff;
+            border-bottom: 1px solid #e5e5e5;
+            padding: 0 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 56px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-brand {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #1d1d1f;
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: #555;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color .15s;
+        }
+
+        .nav-links a:hover { color: #000; }
+
+        /* ── PRO badge ── */
+        .badge-pro {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: linear-gradient(135deg, #f5a623 0%, #f97316 100%);
+            color: #fff;
+            font-size: 0.65rem;
+            font-weight: 800;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            padding: 2px 7px;
+            border-radius: 999px;
+            vertical-align: middle;
+            margin-left: 4px;
+            box-shadow: 0 1px 4px rgba(249,115,22,.35);
+        }
+
+        /* ── Layout ── */
+        .page-wrapper {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 2.5rem 1.5rem;
+        }
+
+        /* ── Cards ── */
+        .card {
+            background: #fff;
+            border-radius: 12px;
+            border: 1px solid #e5e5e5;
+            padding: 1.5rem 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+            margin-bottom: 1.25rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .card-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+        }
+
+        /* ── Buttons ── */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: .4rem;
+            padding: .55rem 1.2rem;
+            border-radius: 8px;
+            font-size: .88rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: filter .15s, transform .1s;
+            border: none;
+        }
+
+        .btn:hover { filter: brightness(.93); transform: translateY(-1px); }
+
+        .btn-primary { background: #1d1d1f; color: #fff; }
+        .btn-premium { background: linear-gradient(135deg, #f5a623, #f97316); color: #fff; }
+        .btn-outline  {
+            background: transparent;
+            color: #1d1d1f;
+            border: 1.5px solid #d1d1d6;
+        }
+
+        /* ── Flash / alert ── */
+        .alert {
+            padding: .9rem 1.2rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            font-size: .9rem;
+        }
+
+        .alert-warning {
+            background: #fff8ec;
+            border: 1px solid #f5a623;
+            color: #92400e;
+        }
+
+        .alert-info {
+            background: #eff6ff;
+            border: 1px solid #93c5fd;
+            color: #1e40af;
+        }
+
+        /* ── Stat grid ── */
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-box {
+            background: #f9f9fb;
+            border: 1px solid #e5e5e5;
+            border-radius: 10px;
+            padding: 1.1rem;
+            text-align: center;
+        }
+
+        .stat-value { font-size: 2rem; font-weight: 700; }
+        .stat-label { font-size: .8rem; color: #555; margin-top: 4px; }
+
+        /* ── Pricing cards ── */
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .pricing-card {
+            background: #fff;
+            border: 2px solid #e5e5e5;
+            border-radius: 14px;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: .75rem;
+        }
+
+        .pricing-card.featured {
+            border-color: #f97316;
+            position: relative;
+        }
+
+        .pricing-card.featured::before {
+            content: 'Best Value';
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #f97316;
+            color: #fff;
+            font-size: .7rem;
+            font-weight: 700;
+            padding: 3px 12px;
+            border-radius: 999px;
+        }
+
+        .pricing-price { font-size: 2.2rem; font-weight: 800; }
+        .pricing-price span { font-size: 1rem; font-weight: 400; color: #888; }
+        .pricing-features { list-style: none; padding: 0; }
+        .pricing-features li::before { content: '✓  '; color: #16a34a; font-weight: 700; }
+        .pricing-features li { padding: .3rem 0; font-size: .9rem; color: #555; }
+
+        {% block styles %}{% endblock %}
+    </style>
+</head>
+<body>
+
+<nav>
+    <a class="nav-brand" href="/">NikanzoPHP</a>
+
+    <div class="nav-links">
+        <a href="/dashboard">Dashboard</a>
+        <a href="/dashboard/advanced">Advanced ✨</a>
+
+        {# ── PRO badge — shown when the user has a premium membership ──────── #}
+        {% if is_premium is defined and is_premium %}
+            <span>
+                {{ user_name ?? 'Account' }}
+                <span class="badge-pro">PRO</span>
+            </span>
+        {% else %}
+            <a href="/upgrade" class="btn btn-premium" style="padding:.4rem .9rem;font-size:.8rem;">Upgrade to PRO</a>
+        {% endif %}
+    </div>
+</nav>
+
+<div class="page-wrapper">
+    {% block content %}{% endblock %}
+</div>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

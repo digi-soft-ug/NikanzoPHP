@@ -10,43 +10,58 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
+/**
+ * Sliding-window rate limiter (in-process storage).
+ *
+ * For multi-process / distributed deployments replace $this->buckets with an
+ * APCu or Redis backend. Static state was deliberately removed to prevent test
+ * cross-contamination — each Kernel instantiation gets a clean instance.
+ */
 final class RateLimitMiddleware implements MiddlewareInterface
 {
-    private static array $bucket = [];
+    /** @var array<string, list<int>> */
+    private array $buckets = [];
 
-    public function __construct(private int $limit = 60, private int $intervalSeconds = 60)
-    {
+    public function __construct(
+        private readonly int $limit           = 60,
+        private readonly int $intervalSeconds = 60,
+    ) {
     }
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        $key = $this->key($request);
-        $now = time();
+        $key         = $this->key($request);
+        $now         = time();
         $windowStart = $now - $this->intervalSeconds;
 
-        if (!isset(self::$bucket[$key])) {
-            self::$bucket[$key] = [];
-        }
+        $this->buckets[$key] = array_values(
+            array_filter($this->buckets[$key] ?? [], static fn (int $ts) => $ts >= $windowStart)
+        );
 
-        // Drop old timestamps
-        self::$bucket[$key] = array_values(array_filter(self::$bucket[$key], fn (int $ts) => $ts >= $windowStart));
-
-        if (count(self::$bucket[$key]) >= $this->limit) {
+        if (count($this->buckets[$key]) >= $this->limit) {
             return new Response(
                 429,
-                ['Content-Type' => 'application/json'],
+                [
+                    'Content-Type'  => 'application/json',
+                    'Retry-After'   => (string) $this->intervalSeconds,
+                    'X-RateLimit-Limit' => (string) $this->limit,
+                ],
                 json_encode(['error' => 'too_many_requests'], JSON_THROW_ON_ERROR)
             );
         }
 
-        self::$bucket[$key][] = $now;
+        $this->buckets[$key][] = $now;
 
-        return $handler->handle($request);
+        $response = $handler->handle($request);
+
+        return $response
+            ->withHeader('X-RateLimit-Limit', (string) $this->limit)
+            ->withHeader('X-RateLimit-Remaining', (string) max(0, $this->limit - count($this->buckets[$key])));
     }
 
     private function key(ServerRequestInterface $request): string
     {
-        $ip = $request->getServerParams()['REMOTE_ADDR'] ?? 'unknown';
+        $ip   = $request->getServerParams()['REMOTE_ADDR'] ?? 'unknown';
         $path = $request->getUri()->getPath();
 
         return $ip . '|' . $path;
