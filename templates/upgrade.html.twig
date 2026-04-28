@@ -1,0 +1,155 @@
+{% extends 'layout/base.html.twig' %}
+
+{% set is_premium = false %}
+
+{% block title %}Upgrade to PRO — NikanzoPHP{% endblock %}
+
+{% block styles %}
+.upgrade-hero {
+    text-align: center;
+    padding: 3rem 1rem 2rem;
+}
+
+.upgrade-hero h1 { font-size: 2.2rem; font-weight: 800; margin-bottom: .75rem; }
+.upgrade-hero p  { color: #555; font-size: 1.05rem; max-width: 520px; margin: 0 auto 1.5rem; }
+
+.restricted-banner {
+    background: #fff8ec;
+    border: 1.5px solid #f5a623;
+    border-radius: 10px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 2rem;
+    color: #92400e;
+    font-size: .92rem;
+    text-align: center;
+}
+
+.feature-list {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: .6rem;
+    margin: 1.5rem 0;
+}
+
+.feature-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: .5rem;
+    font-size: .9rem;
+    color: #444;
+}
+
+.feature-list li::before {
+    content: '✦';
+    color: #f97316;
+    font-size: .8rem;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+{% endblock %}
+
+{% block content %}
+
+{# ── "Feature Restricted" banner (shown when redirected by the gate) ──────── #}
+{% if reason %}
+    <div class="restricted-banner">
+        <strong>Feature Restricted:</strong> {{ reason }}
+    </div>
+{% endif %}
+
+<div class="upgrade-hero">
+    <h1>Unlock <span style="background:linear-gradient(135deg,#f5a623,#f97316);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">PRO</span></h1>
+    <p>Get advanced analytics, higher API limits, and priority support — everything you need to build faster.</p>
+</div>
+
+{# ── Premium feature highlights ───────────────────────────────────────────── #}
+<div class="card" style="text-align:center;">
+    <div class="card-header" style="justify-content:center;border:none;margin-bottom:.5rem;">
+        <span class="card-title">Everything you get with PRO</span>
+    </div>
+    <ul class="feature-list" style="justify-items:start;max-width:720px;margin:0 auto 1rem;">
+        <li>Advanced Analytics Dashboard</li>
+        <li>Full API access (1 000 req/min)</li>
+        <li>Priority email support</li>
+        <li>SLA guarantee (Annual plan)</li>
+        <li>Dedicated onboarding session</li>
+        <li>All future premium features</li>
+    </ul>
+</div>
+
+{# ── Pricing cards ─────────────────────────────────────────────────────────── #}
+<div class="pricing-grid">
+    {% for plan in plans %}
+    <div class="pricing-card {{ loop.last ? 'featured' }}">
+        <div>
+            <strong style="font-size:1.1rem;">{{ plan.name }}</strong>
+        </div>
+        <div class="pricing-price">
+            ${{ plan.price }}
+            <span>/ {{ plan.interval }}</span>
+        </div>
+        <ul class="pricing-features">
+            {% for feature in plan.features %}
+                <li>{{ feature }}</li>
+            {% endfor %}
+        </ul>
+
+        {# Checkout button — calls /api/billing/checkout, redirects to LS hosted page #}
+        <button
+            class="btn btn-premium"
+            style="width:100%;justify-content:center;margin-top:auto;"
+            data-variant-id="{{ plan.variant_id }}"
+            onclick="startCheckout(this)"
+            {% if plan.variant_id == '' %}disabled title="Variant not configured — set LEMONSQUEEZY_VARIANT_* in .env"{% endif %}
+        >
+            Get {{ plan.name }} PRO
+        </button>
+    </div>
+    {% endfor %}
+</div>
+
+<p style="text-align:center;color:#888;font-size:.8rem;margin-top:1.5rem;">
+    Payments are processed securely by Lemon Squeezy. Cancel any time.
+</p>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function startCheckout(btn) {
+    const variantId = btn.dataset.variantId;
+    if (!variantId) {
+        alert('Payment not configured. Set LEMONSQUEEZY_VARIANT_* in .env');
+        return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Redirecting…';
+
+    try {
+        const res  = await fetch('/api/billing/checkout', {
+            method:  'POST',
+            headers: {
+                'Content-Type':  'application/json',
+                'Authorization': 'Bearer ' + (window.__jwt ?? ''),
+            },
+            body: JSON.stringify({ variant_id: variantId }),
+        });
+
+        const data = await res.json();
+
+        if (data.url) {
+            window.location.href = data.url;
+        } else {
+            throw new Error(data.error ?? 'Checkout session creation failed');
+        }
+    } catch (err) {
+        alert('Error: ' + err.message);
+        btn.disabled = false;
+        btn.textContent = 'Try again';
+    }
+}
+</script>
+{% endblock %}

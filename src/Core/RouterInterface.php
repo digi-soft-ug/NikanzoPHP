@@ -11,7 +11,8 @@ interface RouterInterface
     public function registerController(string $controllerClass): void;
 
     /**
-     * @return array{0: string, 1: string}|null
+     * @return array{0: string, 1: string, 2: array<string,string>}|null
+     *   [controllerClass, method, routeParams] or null if not matched
      */
     public function match(ServerRequestInterface $request): ?array;
 }

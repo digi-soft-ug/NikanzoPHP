@@ -51,11 +51,10 @@ final class Container implements ContainerInterface
 
         try {
             $service = $this->builder->get($id);
+        } catch (ServiceNotFoundException $e) {
+            throw new NotFoundException(sprintf('Service "%s" not found in container', $id), 0, $e);
         } catch (\Throwable $e) {
-            if ($e instanceof ServiceNotFoundException) {
-                throw new \RuntimeException(sprintf('Service %s not found', $id));
-            }
-            throw $e;
+            throw new ContainerException(sprintf('Error resolving service "%s": %s', $id, $e->getMessage()), 0, $e);
         }
 
         $this->applyPropertyInjection($service);

@@ -4,38 +4,41 @@ declare(strict_types=1);
 
 namespace Nikanzo\Core;
 
-use Nikanzo\Core\Attributes\Route;
+use Nikanzo\Core\Http\RouteExtractor;
 use Psr\Http\Message\ServerRequestInterface;
-use ReflectionClass;
 
 final class FastRouter implements RouterInterface
 {
     /**
-     * @var array<string, array<string, array{0: string, 1: string}>>
+     * @var array<string, array<string, array{0: string, 1: string, 2: array<string,string>}>>
      */
     private array $routes = [];
-    private string $cacheFile;
     private bool $cacheLoaded = false;
     private bool $dirty = false;
+    private string $prefix;
 
-    public function __construct(string $cacheFile)
+    public function __construct(private readonly string $cacheFile, string $prefix = '')
     {
-        $this->cacheFile = $cacheFile;
+        $this->prefix = $prefix;
     }
 
     public function registerController(string $controllerClass): void
     {
-        // No-op when using cache; use warm() to build routes from reflection.
         if ($this->cacheLoaded) {
             return;
         }
 
-        $this->addRoutesFromController($controllerClass);
+        foreach (RouteExtractor::extract($controllerClass, $this->prefix) as $method => $methodRoutes) {
+            foreach ($methodRoutes as $pattern => $handler) {
+                $this->routes[$method][$pattern] = $handler;
+            }
+        }
+
         $this->dirty = true;
     }
 
     /**
-     * Build routes from controllers and write cache.
+     * Build routes from multiple controllers and write cache.
      *
      * @param string[] $controllers
      */
@@ -43,16 +46,17 @@ final class FastRouter implements RouterInterface
     {
         $this->routes = [];
         foreach ($controllers as $controller) {
-            $this->addRoutesFromController($controller);
+            foreach (RouteExtractor::extract($controller, $this->prefix) as $method => $methodRoutes) {
+                foreach ($methodRoutes as $pattern => $handler) {
+                    $this->routes[$method][$pattern] = $handler;
+                }
+            }
         }
         $this->dirty = true;
         $this->persistCache();
         $this->cacheLoaded = true;
     }
 
-    /**
-     * Load routes from cache file if available.
-     */
     public function loadFromCache(): bool
     {
         if (!is_file($this->cacheFile)) {
@@ -64,22 +68,23 @@ final class FastRouter implements RouterInterface
             return false;
         }
 
-        $this->routes = $routes;
+        $this->routes      = $routes;
         $this->cacheLoaded = true;
-        $this->dirty = false;
+        $this->dirty       = false;
 
         return true;
     }
 
     /**
-     * @return array{0: string, 1: string}|null
+     * @return array{0: string, 1: string, 2: array<string,string>}|null
      */
     public function match(ServerRequestInterface $request): ?array
     {
-        $method = strtoupper($request->getMethod());
-        $path = $this->normalizePath($request->getUri()->getPath());
-
-        return $this->routes[$method][$path] ?? null;
+        return RouteExtractor::matchPath(
+            $request->getMethod(),
+            $request->getUri()->getPath(),
+            $this->routes
+        );
     }
 
     public function persistCache(): void
@@ -88,45 +93,18 @@ final class FastRouter implements RouterInterface
             return;
         }
 
-        $this->writeCache();
-        $this->dirty = false;
-        $this->cacheLoaded = true;
-    }
-
-    private function addRoutesFromController(string $controllerClass): void
-    {
-        if (!class_exists($controllerClass)) {
-            throw new \InvalidArgumentException('Controller class does not exist: ' . $controllerClass);
-        }
-        $reflection = new ReflectionClass($controllerClass);
-        foreach ($reflection->getMethods() as $method) {
-            foreach ($method->getAttributes(Route::class) as $attribute) {
-                $route = $attribute->newInstance();
-                $path = $this->normalizePath($route->getPath());
-
-                foreach ($route->getMethods() as $httpMethod) {
-                    $methodKey = strtoupper($httpMethod);
-                    $this->routes[$methodKey][$path] = [$controllerClass, $method->getName()];
-                }
-            }
-        }
-    }
-
-    private function normalizePath(string $path): string
-    {
-        $normalized = '/' . ltrim($path, '/');
-
-        return rtrim($normalized, '/') ?: '/';
-    }
-
-    private function writeCache(): void
-    {
         $dir = dirname($this->cacheFile);
         if (!is_dir($dir)) {
-            mkdir($dir, 0777, true);
+            mkdir($dir, 0775, true);
         }
 
-        $content = '<?php return ' . var_export($this->routes, true) . ';';
-        file_put_contents($this->cacheFile, $content);
+        file_put_contents(
+            $this->cacheFile,
+            '<?php return ' . var_export($this->routes, true) . ';',
+            LOCK_EX
+        );
+
+        $this->dirty       = false;
+        $this->cacheLoaded = true;
     }
 }

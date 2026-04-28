@@ -9,11 +9,16 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 final class ErrorHandlerMiddleware implements MiddlewareInterface
 {
-    public function __construct(private bool $debug = false)
+    private LoggerInterface $logger;
+
+    public function __construct(private readonly bool $debug = false, ?LoggerInterface $logger = null)
     {
+        $this->logger = $logger ?? new NullLogger();
     }
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
@@ -21,10 +26,16 @@ final class ErrorHandlerMiddleware implements MiddlewareInterface
         try {
             return $handler->handle($request);
         } catch (\Throwable $e) {
+            $this->logger->error($e->getMessage(), [
+                'exception' => $e,
+                'method'    => $request->getMethod(),
+                'uri'       => (string) $request->getUri(),
+            ]);
+
             $payload = $this->debug ? [
-                'error' => 'internal_error',
+                'error'   => 'internal_error',
                 'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
+                'trace'   => $e->getTraceAsString(),
             ] : ['error' => 'internal_error'];
 
             return new Response(

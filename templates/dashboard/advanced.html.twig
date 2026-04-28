@@ -1,0 +1,119 @@
+{% extends 'layout/base.html.twig' %}
+
+{% set is_premium = true %}
+{% set user_name  = user.name ?? 'PRO User' %}
+
+{% block title %}Advanced Analytics — NikanzoPHP PRO{% endblock %}
+
+{% block styles %}
+.premium-header {
+    background: linear-gradient(135deg, #f5a623 0%, #f97316 50%, #ef4444 100%);
+    border-radius: 14px;
+    color: #fff;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.premium-header h1 { font-size: 1.6rem; font-weight: 800; }
+.premium-header p  { opacity: .85; margin-top: .3rem; font-size: .9rem; }
+
+table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+th { text-align: left; padding: .6rem .8rem; background: #f9f9fb; color: #444; font-weight: 600; border-bottom: 1px solid #e5e5e5; }
+td { padding: .6rem .8rem; border-bottom: 1px solid #f0f0f0; }
+tr:last-child td { border-bottom: none; }
+{% endblock %}
+
+{% block content %}
+
+<div class="premium-header">
+    <div>
+        <h1>Advanced Analytics <span class="badge-pro">PRO</span></h1>
+        <p>Full visibility into your data — exclusive to premium members.</p>
+    </div>
+    <div style="font-size:.8rem;opacity:.75;">
+        Generated: {{ analytics.generated_at }}
+    </div>
+</div>
+
+{# ── Key metrics ─────────────────────────────────────────────────────────── #}
+<div class="stat-grid">
+    <div class="stat-box">
+        <div class="stat-value">{{ analytics.total_todos }}</div>
+        <div class="stat-label">Total Todos</div>
+    </div>
+    <div class="stat-box">
+        <div class="stat-value" style="color:#16a34a;">{{ analytics.completed_todos }}</div>
+        <div class="stat-label">Completed</div>
+    </div>
+    <div class="stat-box">
+        <div class="stat-value" style="color:#ef4444;">{{ analytics.open_todos }}</div>
+        <div class="stat-label">Open</div>
+    </div>
+    <div class="stat-box">
+        <div class="stat-value">
+            {% if analytics.total_todos > 0 %}
+                {{ ((analytics.completed_todos / analytics.total_todos) * 100)|round }}%
+            {% else %}
+                —
+            {% endif %}
+        </div>
+        <div class="stat-label">Completion Rate</div>
+    </div>
+</div>
+
+{# ── Recent todos table ───────────────────────────────────────────────────── #}
+<div class="card">
+    <div class="card-header">
+        <span class="card-title">Recent Todos (PRO view)</span>
+    </div>
+
+    {% if analytics.recent_todos is empty %}
+        <p style="color:#888;">No todos yet.</p>
+    {% else %}
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Title</th>
+                    <th>Description</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for todo in analytics.recent_todos %}
+                <tr>
+                    <td>{{ todo.id }}</td>
+                    <td>{{ todo.title }}</td>
+                    <td>{{ todo.description ?? '—' }}</td>
+                    <td>
+                        {% if todo.completed %}
+                            <span style="color:#16a34a;font-weight:600;">✓ Done</span>
+                        {% else %}
+                            <span style="color:#ef4444;">✗ Open</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+</div>
+
+{# ── Account info ─────────────────────────────────────────────────────────── #}
+<div class="card">
+    <div class="card-header">
+        <span class="card-title">Your Subscription</span>
+    </div>
+    <p><strong>Name:</strong> {{ user.name ?? '—' }}</p>
+    <p><strong>Email:</strong> {{ user.email ?? '—' }}</p>
+    <p><strong>Membership:</strong>
+        <span class="badge-pro">PRO</span>
+    </p>
+    <p><strong>Access until:</strong>
+        {{ user.premium_until ? user.premium_until : 'Indefinite' }}
+    </p>
+</div>
+
+{% endblock %}
