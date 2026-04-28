@@ -122,10 +122,9 @@ final class LemonSqueezyClient implements LemonSqueezyClientInterface
      * @param string $rawBody  The raw, unparsed request body string
      * @param string $signature The value of the X-Signature header
      */
-    public function verifyWebhookSignature(string $rawBody, string $signature): bool
+    public function verifyWebhookSignature(string $rawBody, string $signature, ?string $secret = null): bool
     {
-        // Use env for secret to match interface
-        $secret = getenv('LEMONSQUEEZY_WEBHOOK_SECRET') ?: '';
+        $secret = $secret ?? (getenv('LEMONSQUEEZY_WEBHOOK_SECRET') ?: '');
         if ($signature === '' || $secret === '' || $rawBody === '') {
             return false;
         }

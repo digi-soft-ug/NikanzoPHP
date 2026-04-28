@@ -7,7 +7,7 @@ namespace Nikanzo\Application;
 use Nikanzo\Core\Attributes\Route;
 use Nikanzo\Core\Controller\AbstractController;
 use Nikanzo\Services\LemonSqueezyClientInterface;
-use Nikanzo\Services\LicenseManager;
+use Nikanzo\Services\LicenseManagerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerInterface;
@@ -48,7 +48,7 @@ final class BillingController extends AbstractController
 
     public function __construct(
         LemonSqueezyClientInterface $lsClient,
-        LicenseManager $licenseManager,
+        LicenseManagerInterface $licenseManager,
         LoggerInterface $logger = new NullLogger()
     ) {
         $this->lsClient = $lsClient;

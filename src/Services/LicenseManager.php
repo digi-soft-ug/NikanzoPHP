@@ -23,7 +23,7 @@ use Psr\Log\NullLogger;
  * the calling layer (webhook handler, etc.). This service only handles the
  * database side of membership management.
  */
-final class LicenseManager
+final class LicenseManager implements LicenseManagerInterface
 {
     private const TABLE = 'users';
 

@@ -29,7 +29,7 @@ interface LemonSqueezyClientInterface
      * @param string $signature
      * @return bool
      */
-    public function verifyWebhookSignature(string $payload, string $signature): bool;
+    public function verifyWebhookSignature(string $payload, string $signature, ?string $secret = null): bool;
 
     // Add other public methods as needed
 }
