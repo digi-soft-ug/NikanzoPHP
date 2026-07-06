@@ -7,6 +7,7 @@ namespace Nikanzo\Core;
 use Nikanzo\Core\Attributes\PremiumRequired;
 use Nikanzo\Core\Attributes\RequiredScope;
 use Nikanzo\Core\Container\Container;
+use Nikanzo\Core\Http\ErrorPageRenderer;
 use Nikanzo\Core\Http\HttpBridge;
 use Nikanzo\Services\LicenseManager;
 use Nyholm\Psr7\Response;
@@ -25,12 +26,18 @@ final class Kernel
         private readonly RouterInterface $router,
         private readonly Container $container,
         private readonly ?LicenseManager $licenseManager = null,
+        private readonly ?ErrorPageRenderer $errorPageRenderer = null,
     ) {
     }
 
     public function addMiddleware(MiddlewareInterface $middleware): void
     {
         $this->middleware[] = $middleware;
+    }
+
+    public function errorPageRenderer(): ErrorPageRenderer
+    {
+        return $this->errorPageRenderer ?? new ErrorPageRenderer();
     }
 
     public function handle(Request $request): ResponseInterface
@@ -81,10 +88,18 @@ final class Kernel
                 $match = $this->router->match($request);
 
                 if ($match === null) {
+                    if (ErrorPageRenderer::isJsonClient($request)) {
+                        return new Response(
+                            404,
+                            ['Content-Type' => 'application/json'],
+                            json_encode(['error' => 'not_found'], JSON_THROW_ON_ERROR)
+                        );
+                    }
+
                     return new Response(
                         404,
-                        ['Content-Type' => 'application/json'],
-                        json_encode(['error' => 'not_found'], JSON_THROW_ON_ERROR)
+                        ['Content-Type' => 'text/html; charset=utf-8'],
+                        $this->kernel->errorPageRenderer()->renderHtml(404, $request)
                     );
                 }
 
@@ -224,13 +239,7 @@ final class Kernel
         string $redirectTo,
         string $message,
     ): ResponseInterface {
-        $accept      = strtolower($request->getHeaderLine('Accept'));
-        $format      = (string) ($request->getAttribute('accept.format') ?? 'any');
-        $isJsonClient = $format === 'json'
-            || str_contains($accept, 'application/json')
-            || str_contains($accept, 'application/vnd.');
-
-        if ($isJsonClient) {
+        if (ErrorPageRenderer::isJsonClient($request)) {
             return new Response(
                 403,
                 ['Content-Type' => 'application/json'],
