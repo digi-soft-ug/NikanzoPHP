@@ -45,6 +45,7 @@
     "nikan"
   ],
   "scripts": {
+    "test": "phpunit",
     "phpstan": "phpstan analyse",
     "phpstan:ci": "phpstan analyse --error-format=github",
     "php-cs-fixer": "php-cs-fixer fix --dry-run --diff",
