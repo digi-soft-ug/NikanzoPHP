@@ -326,7 +326,13 @@ final class QueryBuilder
             return $column;
         }
 
-        return '`' . str_replace('`', '``', $column) . '`';
+        // MySQL/MariaDB use backtick identifier quoting; PostgreSQL uses ANSI
+        // double quotes (backticks are a syntax error there). Driver-detect
+        // rather than hardcode, since this builder is shared by every
+        // NikanzoPHP project regardless of which engine it's connected to.
+        $quote = $this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'pgsql' ? '"' : '`';
+
+        return $quote . str_replace($quote, $quote . $quote, $column) . $quote;
     }
 
     private function nextParam(): string

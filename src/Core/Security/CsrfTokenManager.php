@@ -32,7 +32,9 @@ final class CsrfTokenManager
     {
         $stored = $_SESSION[self::SESSION_KEY] ?? '';
 
-        return is_string($stored) && hash_equals($stored, $submitted);
+        // A session that never issued a token has '' stored; hash_equals('', '') would
+        // let a token-less POST pass, so an empty stored token must never validate.
+        return is_string($stored) && $stored !== '' && hash_equals($stored, $submitted);
     }
 
     /** Rotate the token (call after a successful state-changing request). */
