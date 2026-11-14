@@ -8,3 +8,29 @@ node_modules/
 .env
 *.log
 Dockerfile
+
+# Added by CI hardening (secrets, credentials, dumps, backups) — runtime files are untouched
+# --- secrets / credentials: never bake into an image layer ---
+.env.*
+!.env.example
+**/auth.json
+**/*.pem
+**/*.key
+**/id_rsa*
+**/id_ed25519*
+**/*.p12
+**/*.pfx
+secrets/
+.ssh/
+# --- dumps & backups ---
+backups/
+**/*.bak
+**/*.dump
+**/*.sql.gz
+**/*.sql.enc
+**/*.enc
+# --- vcs ---
+# nested .env files too (patterns without **/ only match the repo root)
+**/.env
+**/.env.*
+!**/.env.example
