@@ -30,3 +30,7 @@ backups/
 **/*.sql.enc
 **/*.enc
 # --- vcs ---
+# nested .env files too (patterns without **/ only match the repo root)
+**/.env
+**/.env.*
+!**/.env.example
